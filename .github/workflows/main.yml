@@ -1,19 +1,29 @@
-name: Sync Fork
-
+# File: .github/workflows/repo-sync.yml
+name: 同步仓库
 on:
-  workflow_dispatch: # on button click
-
+  schedule:
+    - cron: '15 0 * * *'
+  workflow_dispatch:
+  watch:
+    types: started
+  repository_dispatch:
+    types: 同步仓库
 jobs:
-  sync:
-
+  repo-sync:
+    env:
+      PAT: ${{ secrets.PAT || github.event.client_payload.PAT }}
     runs-on: ubuntu-latest
-
+    if: github.event.repository.owner.id == github.event.sender.id
     steps:
-      - uses: NimaQu/fork-sync@v1.3.1
+      - uses: actions/checkout@v2
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          owner: happy888888
-          base: master
-          head: master
-          token_merge: true
-          personal_token: ${{ secrets.PERSONAL_TOKEN }}
+          persist-credentials: false
+
+      - name: 【同步】
+        uses: repo-sync/github-sync@v2
+        if: env.PAT
+        with:
+          source_repo: "https://github.com/happy888888/BiliExp.git"
+          source_branch: "master"
+          destination_branch: "master"
+          github_token: ${{ secrets.PAT || github.event.client_payload.PAT }}
